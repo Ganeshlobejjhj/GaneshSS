@@ -1,0 +1,33 @@
+name: 24x7 Ganesh SS Background Runner
+
+on:
+  schedule:
+    # Har 5 minute me background me chalega
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run Collector
+        run: python collector.py
+
+      - name: Commit & Push New Data to GitHub
+        run: |
+          git config --global user.name "Ganesh-SS-Bot"
+          git config --global user.email "bot@ganeshss.com"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-Update WinGo 24/7 Data [skip ci]"
+          git push
