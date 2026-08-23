@@ -1,0 +1,2069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ganesh SS · Win Go Master Engine & Strategy Lab (Firebase Cloud)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Google Firebase Cloud Database SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151c2c;
+            --bg-card-hover: #1e293b;
+            --primary-blue: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --accent-cyan: #06b6d4;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --dark-blue: #0f172a;
+            --border-color: #1e293b;
+            --border-highlight: #334155;
+            --text-dark: #f8fafc;
+            --text-muted: #94a3b8;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f97316;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: var(--font-main); }
+        body {
+            background: var(--bg-main);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .container {
+            max-width: 980px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .header {
+            text-align: center;
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, var(--bg-card) 100%);
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px solid var(--border-highlight);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header .sub {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-top: 2px;
+            letter-spacing: 1.5px;
+        }
+        .header-actions {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .btn-action {
+            background: #1e293b;
+            color: var(--text-muted);
+            border: 1px solid var(--border-highlight);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-action.red { background: rgba(239, 68, 68, 0.15); color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
+        .btn-action.green { background: rgba(16, 185, 129, 0.15); color: var(--green); border-color: rgba(16, 185, 129, 0.3); }
+        .btn-action.purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.3); }
+        .btn-action.blue { background: rgba(59, 130, 246, 0.15); color: var(--primary-blue); border-color: rgba(59, 130, 246, 0.3); }
+        .btn-action.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); }
+        .btn-action:hover { transform: translateY(-1px); }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 800;
+            font-size: 0.72rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary-blue);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .tab-content { display: none; flex-direction: column; gap: 14px; }
+        .tab-content.active { display: flex; }
+
+        .period-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border: 1px solid var(--border-highlight);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 14px 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        .period-row .lbl { color: var(--text-muted); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+        .period-row .val { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: #60a5fa; margin-top: 2px; }
+        .period-row .timer { color: var(--accent-cyan); font-family: var(--font-mono); font-size: 1.4rem; font-weight: 900; }
+
+        .top-results-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .box-title {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .dual-results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .mod-results-sec {
+            background: var(--bg-main);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .mod-title {
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            margin-bottom: 6px;
+        }
+        .top-results-grid {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+        }
+        .res-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 6px;
+            min-width: 48px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .res-pill .num { font-size: 0.8rem; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+        .res-pill .size { font-size: 0.5rem; font-weight: 800; text-transform: uppercase; }
+        .res-pill .period-digit { font-size: 0.52rem; font-weight: 700; color: var(--accent-purple); font-family: var(--font-mono); border-top: 1px solid var(--border-color); margin-top: 2px; padding-top: 2px; }
+        .res-pill.big .size { color: #fbbf24; }
+        .res-pill.small .size { color: #38bdf8; }
+
+        .master-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #1e3a8a 50%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+        }
+        .master-card .title { font-size: 0.75rem; font-weight: 900; color: #bfdbfe; letter-spacing: 1.5px; text-transform: uppercase; }
+        .master-card .val { font-size: 3.5rem; font-weight: 900; letter-spacing: 2px; margin: 2px 0; text-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .master-card .val.big-text { color: #fbbf24; }
+        .master-card .val.small-text { color: #38bdf8; }
+        .master-card .sub-info { font-size: 0.72rem; font-weight: 700; background: rgba(0,0,0,0.3); padding: 6px 14px; border-radius: 20px; display: inline-block; font-family: var(--font-mono); }
+        
+        .live-stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .lss-box .lbl { font-size: 0.55rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+        .lss-box .val { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 800; color: #fff; margin-top: 2px; }
+
+        .builder-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-highlight);
+            border-radius: 16px;
+            padding: 16px;
+        }
+        .bulk-textarea {
+            width: 100%;
+            height: 90px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-highlight);
+            border-radius: 10px;
+            padding: 10px;
+            color: #a855f7;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            resize: vertical;
+            outline: none;
+            margin-top: 6px;
+        }
+        .bulk-textarea:focus { border-color: var(--accent-purple); }
+        
+        /* 📁 File Upload Dropzone Style */
+        .file-upload-box {
+            border: 2px dashed var(--accent-purple);
+            background: rgba(168, 85, 247, 0.05);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+        .file-upload-box:hover {
+            background: rgba(168, 85, 247, 0.12);
+            border-color: #d946ef;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.6rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        .form-group input, .form-group select {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--bg-main);
+            color: #fff;
+            outline: none;
+        }
+        .btn-add {
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-cyan));
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transition: all 0.2s;
+        }
+        .btn-purple {
+            background: linear-gradient(90deg, #8b5cf6, #d946ef);
+            box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+        }
+
+        .sub-methods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+        }
+        .sub-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sub-card .sc-head { display: flex; justify-content: space-between; align-items: center; }
+        .sub-card .sc-title { font-size: 0.72rem; font-weight: 800; color: #fff; }
+        .sub-card .sc-actions { display: flex; gap: 6px; margin-top: 4px; }
+        
+        .btn-sm {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-sm.toggle-on { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.4); }
+        .btn-sm.toggle-off { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .btn-sm.del { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4); }
+        .btn-sm.exp { background: rgba(59, 130, 246, 0.2); color: var(--primary-blue); border: 1px solid rgba(59, 130, 246, 0.4); }
+
+        .method-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+        }
+        .method-head {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #60a5fa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .meta-badges { display: flex; gap: 4px; align-items: center; }
+        .badge { font-size: 0.55rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; }
+        .badge.blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge.orange { background: rgba(249, 115, 22, 0.2); color: var(--orange); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+        .stat-box {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        .stat-box .lbl { font-size: 0.5rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .stat-box .val { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: #fff; margin-top: 2px; }
+        .stat-box .val.green { color: var(--green); }
+        .stat-box .val.red { color: var(--red); }
+
+        .last5-bar { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
+        .l5-pill { font-size: 0.58rem; font-weight: 900; font-family: var(--font-mono); padding: 2px 6px; border-radius: 4px; }
+        .l5-pill.w { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .l5-pill.l { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+        .perf-control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-top: 8px;
+        }
+        .perf-search {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 10px;
+            color: #fff;
+            font-size: 0.72rem;
+            outline: none;
+            min-width: 180px;
+        }
+        .page-btn {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover:not(:disabled) { background: #334155; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .table-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            overflow-x: auto;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        table.logs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.68rem;
+            text-align: center;
+        }
+        table.logs-table th, table.logs-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        table.logs-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-main);
+            color: var(--text-muted);
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 2;
+        }
+        .badge-win { color: var(--green); font-weight: 800; }
+        .badge-loss { color: var(--red); font-weight: 800; }
+
+        @media (max-width: 600px) {
+            .header-actions { position: static; margin-top: 10px; justify-content: center; }
+            .form-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .dual-results-container { grid-template-columns: 1fr; }
+            .live-stats-summary { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ GANESH SS</h1>
+            <div class="sub">WIN GO MASTER ENGINE & MULTI-STRATEGY HUB (FIREBASE CLOUD)</div>
+            <div class="header-actions">
+                <button class="btn-action" id="btnAutoPurgeToggle" onclick="toggleAutoPurge()">🛡️ AUTO-PURGE (≥9 LOSS): OFF</button>
+                <button class="btn-action purple" onclick="exportSelectedMethods()">📤 EXPORT SELECTED</button>
+                <button class="btn-action blue" onclick="exportAllMethods()">💾 EXPORT ALL</button>
+                <button class="btn-action green" onclick="exportLogsToTxt()">📥 EXPORT LOGS</button>
+                <button class="btn-action red" onclick="clearAllLogsOnly()">🗑️ CLEAR LOGS</button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" id="tabLiveBtn" onclick="switchTab('liveTab', this)">🎯 LIVE ENGINE & LOGS</button>
+            <button class="tab-btn" id="tabLabBtn" onclick="switchTab('labTab', this)">🧪 METHODS LAB & BATCHES (<span id="tabLabCount">0</span>)</button>
+            <button class="tab-btn" id="tabMineBtn" onclick="switchTab('autoMineTab', this)">🧠 AUTO-MINED METHODS (<span id="tabMinedCount">0</span>)</button>
+        </div>
+
+        <!-- Period & Timer -->
+        <div class="period-row">
+            <div>
+                <div class="lbl">LIVE CURRENT PERIOD (PREDICTION FOR W30S)</div>
+                <div class="val" id="currentPeriod">---</div>
+            </div>
+            <div>
+                <div class="lbl">TIMER</div>
+                <div class="timer" id="timerDisplay">00:00</div>
+            </div>
+        </div>
+
+        <!-- Last 10 Results Bar (Dual Modes) -->
+        <div class="top-results-box">
+            <div class="box-title">
+                <span>LAST 10 RESULTS HISTORY (WITH PERIOD LAST DIGITS)</span>
+                <span id="firebaseStatusBadge" style="font-size:0.55rem; color:var(--green);">● GOOGLE FIREBASE CLOUD CONNECTED</span>
+            </div>
+            <div class="dual-results-container">
+                <div class="mod-results-sec">
+                    <div class="mod-title">WinGo 30s (W30s)</div>
+                    <div class="top-results-grid" id="w30sResultsGrid">---</div>
+                </div>
+                <div class="mod-results-sec">
+                    <div class="mod-title">WinGo 1m (W1m)</div>
+                    <div class="top-results-grid" id="w1mResultsGrid">---</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direct API Proxy Last 10 Predictions Box -->
+        <div class="top-results-box" style="border-color: var(--accent-cyan);">
+            <div class="box-title" style="color: var(--accent-cyan);">
+                <span>📡 DIRECT API PROXY - LAST 10 PREDICTIONS HISTORY</span>
+                <span style="font-size:0.55rem; color:var(--accent-cyan);">● STARTUP AUTO-LOAD</span>
+            </div>
+            <div class="top-results-grid" id="proxyPredsGrid">---</div>
+        </div>
+
+        <!-- TAB 1: LIVE ENGINE & LOGS -->
+        <div id="liveTab" class="tab-content active">
+            <!-- Hero Live Main Engine Card -->
+            <div class="master-card">
+                <div class="title">🎯 MAIN ENGINE PREDICTION</div>
+                <div class="val" id="masterPredVal">WAIT</div>
+                <div class="sub-info" id="masterCalcVal">Fetching Proxy Data...</div>
+            </div>
+
+            <!-- Live Engine Data Summary -->
+            <div class="live-stats-summary">
+                <div class="lss-box">
+                    <div class="lbl">TOTAL METHODS LOADED</div>
+                    <div class="val" id="sumTotalMethods">0</div>
+                </div>
+                <div class="lss-box">
+                    <div class="lbl">API PREDICTION STATUS</div>
+                    <div class="val" id="sumVotes" style="color: var(--accent-cyan);">DIRECT PROXY</div>
+                </div>
+                <div class="lss-box">
+                    <div class="lbl">AUTO-SORT STATUS</div>
+                    <div class="val" id="sumSortCountdown" style="color:var(--accent-cyan);">In 10 Rounds</div>
+                </div>
+            </div>
+
+            <!-- Controls, Search & Fixed Pagination Bar -->
+            <div class="perf-control-bar">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="methodSearchInput" class="perf-search" placeholder="🔍 Search formula/digit..." oninput="handleSearchChange()">
+                    <button class="btn-action purple" onclick="manualSortTrigger()">⚡ AUTO-SORT NOW</button>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-sm exp" id="selectAllBtn" onclick="toggleSelectAll()">SELECT ALL</button>
+                    <select id="pageSizeSelect" class="page-btn" onchange="changePageSize(this.value)">
+                        <option value="20">20 / page</option>
+                        <option value="50">50 / page</option>
+                        <option value="100">100 / page</option>
+                        <option value="0">Show All</option>
+                    </select>
+
+                    <div class="pagination-container" id="paginationControls">
+                        <button class="page-btn" id="prevPageBtn" onclick="navigatePage(-1)">◀ PREV</button>
+                        <span id="pageInfoDisplay" style="font-size:0.68rem; font-family:var(--font-mono); font-weight:800; color:var(--text-muted);">1 / 1</span>
+                        <button class="page-btn" id="nextPageBtn" onclick="navigatePage(1)">NEXT ▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Blocks Container -->
+            <div id="statsContainer"></div>
+
+            <!-- Logs History Table -->
+            <div class="table-box">
+                <div class="box-title">
+                    <span>📜 DYNAMIC COLUMN-WISE LOGS HISTORY (SAVED IN CLOUD)</span>
+                    <div style="display:flex; gap:4px;">
+                        <button class="btn-sm toggle-on" id="btnLogTop5" onclick="setLogView('top5')">Top 5</button>
+                        <button class="btn-sm toggle-off" id="btnLogSelected" onclick="setLogView('selected')">Selected</button>
+                    </div>
+                </div>
+                <table class="logs-table">
+                    <thead>
+                        <tr id="logsTableHeader">
+                            <th>Round</th>
+                            <th>Period</th>
+                            <th>Result</th>
+                            <th>Main Engine</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: METHODS LAB & BATCH MANAGEMENT -->
+        <div id="labTab" class="tab-content">
+            <!-- ⚡ CUSTOM INPUT & BATCH CROSSOVER METHODS GENERATOR -->
+            <div class="builder-card" style="border-color: var(--accent-amber); background: linear-gradient(135deg, rgba(245,158,11,0.06) 0%, var(--bg-card) 100%);">
+                <div class="box-title" style="color: #fbbf24; font-size:0.75rem; display:flex; justify-content:space-between;">
+                    <span>🚀 ULTRA CROSSOVER METHODS GENERATOR (BATCH SYSTEM)</span>
+                    <span style="color:var(--green);">AUTO FORMULA COMBINATIONS</span>
+                </div>
+
+                <!-- Total vs Available Counter -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin: 8px 0 10px 0;">
+                    <div style="background: rgba(0,0,0,0.35); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                        <div style="font-size:0.62rem; color:var(--text-muted);">TOTAL FORMULAS POSSIBLE</div>
+                        <div id="cntTotalPossible" style="font-size:1.1rem; font-weight:900; color:#60a5fa; font-family:var(--font-mono);">0</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.35); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                        <div style="font-size:0.62rem; color:var(--text-muted);">CURRENTLY ADDED</div>
+                        <div id="cntCurrentAdded" style="font-size:1.1rem; font-weight:900; color:#34d399; font-family:var(--font-mono);">0</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.35); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                        <div style="font-size:0.62rem; color:var(--text-muted);">AVAILABLE TO ADD NOW</div>
+                        <div id="cntAvailable" style="font-size:1.1rem; font-weight:900; color:#fbbf24; font-family:var(--font-mono);">0</div>
+                    </div>
+                </div>
+
+                <div style="font-size:0.65rem; color:var(--text-muted); margin-bottom:10px;">
+                    Custom number daal kar (e.g. <b>5,000</b> ya <b>10,000</b>) batch bana kar methods add karein. Duplicate formulas auto-skip honge:
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:0.65rem; color:var(--text-muted);">Count to Add</label>
+                        <input type="number" id="customAddCount" value="5000" min="1" style="width:130px; padding:8px 10px; border-radius:8px; border:1px solid var(--border-highlight); background:var(--bg-main); color:#fff; font-weight:800; font-family:var(--font-mono);">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:160px;">
+                        <label style="font-size:0.65rem; color:var(--text-muted);">Batch Name / Tag (Optional)</label>
+                        <input type="text" id="customBatchName" placeholder="e.g. 5K Batch Alpha" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border-highlight); background:var(--bg-main); color:#fff; font-weight:700;">
+                    </div>
+                    <button class="btn-action amber" style="padding:10px 16px; font-size:0.75rem; font-weight:900; align-self:flex-end;" onclick="handleGenerateCustomBatch()">
+                        ⚡ GENERATE & ADD BATCH
+                    </button>
+                    <button class="btn-action blue" style="padding:10px 14px; font-size:0.72rem; align-self:flex-end;" onclick="handleDownloadCustomBatch()">
+                        📥 DOWNLOAD TXT
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📦 BATCHES MANAGEMENT PANEL -->
+            <div class="builder-card" style="border-color: var(--accent-purple);" id="batchManagementCard">
+                <div class="box-title" style="color: #c084fc;">
+                    <span>📦 BATCHES MANAGEMENT (<span id="batchCountHeader">0</span> BATCHES)</span>
+                </div>
+                <div style="font-size:0.62rem; color:var(--text-muted); margin-bottom:8px;">
+                    Har batch ko individually yahan se <b>Export</b> ya <b>Delete</b> karein:
+                </div>
+                <div id="batchListContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:10px;"></div>
+            </div>
+
+            <!-- Delete All Methods Control Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn-action purple" onclick="exportAllMethods()">💾 EXPORT ALL FORMULAS</button>
+                <button class="btn-action red" style="padding:10px 16px; font-size:0.75rem;" onclick="deleteAllMethods()">🗑️ DELETE ALL METHODS</button>
+            </div>
+
+            <!-- 📁 BULK / BATCH FORMULA PASTE & FILE UPLOAD SYSTEM -->
+            <div class="builder-card" style="border-color: var(--accent-purple);">
+                <div class="box-title" style="color: #c084fc;">
+                    <span>📂 BULK FORMULAS & TXT FILE UPLOADER</span>
+                    <span style="font-size:0.55rem; color:#34d399;">NO LIMIT (10,000+ FORMULAS)</span>
+                </div>
+
+                <!-- 🚀 Direct TXT File Upload System -->
+                <div class="file-upload-box" onclick="document.getElementById('fileUploadInput').click()">
+                    <div style="font-size: 1.2rem;">📁</div>
+                    <div style="font-size: 0.72rem; font-weight:800; color:#c084fc; margin-top:2px;">
+                        CLICK HERE TO UPLOAD .TXT FILE
+                    </div>
+                    <div style="font-size: 0.58rem; color:var(--text-muted);">
+                        Direct file choose karein (e.g. Exported methods txt). Ek click me saari methods add ho jayengi!
+                    </div>
+                    <input type="file" id="fileUploadInput" accept=".txt" style="display:none;" onchange="handleFileUpload(event)">
+                </div>
+
+                <div style="font-size:0.6rem; color:var(--text-muted); margin: 10px 0 4px 0;">
+                 Or Paste Directly: Format: <b>[SourceA]-[LagA] [Op] [SourceB]-[LagB] | [SingleDigit: YES/NO] | [LossFlip: ON/OFF] | [InvertDigits: 2,3,5,7]</b>
+                </div>
+                <textarea id="bulkTextarea" class="bulk-textarea" placeholder="Paste formulas here or upload TXT file above..."></textarea>
+                <button class="btn-add btn-purple" onclick="processBulkFormulas()">⚡ ADD ALL BATCH FORMULAS NOW</button>
+            </div>
+
+            <!-- Single Custom Method Builder Form -->
+            <div class="builder-card">
+                <div class="box-title">➕ SINGLE METHOD BUILDER</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Factor A Mod & Lag</label>
+                        <select id="mModA">
+                            <option value="w30s">W30s Result Number</option>
+                            <option value="w30s_p">W30s Period Last Digit</option>
+                            <option value="w1m">W1m Result Number</option>
+                            <option value="w1m_p">W1m Period Last Digit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Factor A Lag (1-10)</label>
+                        <input type="number" id="mLagA" value="1" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Operation</label>
+                        <select id="mOp">
+                            <option value="MUL">Multiply (*)</option>
+                            <option value="ADD">Plus (+)</option>
+                            <option value="SUB">Minus (-)</option>
+                            <option value="AVG">Divide/Avg (/)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Factor B Mod & Lag</label>
+                        <select id="mModB">
+                            <option value="w1m">W1m Result Number</option>
+                            <option value="w1m_p">W1m Period Last Digit</option>
+                            <option value="w30s">W30s Result Number</option>
+                            <option value="w30s_p">W30s Period Last Digit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Factor B Lag (1-10)</label>
+                        <input type="number" id="mLagB" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Single Digit Reduce</label>
+                        <select id="mSingleDigit">
+                            <option value="YES">Yes (Sum digits until single)</option>
+                            <option value="NO">No (Use Last Digit % 10)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Flip Digits (Invert)</label>
+                        <input type="text" id="mFlipDigits" value="2,3,5,7">
+                    </div>
+                    <div class="form-group">
+                        <label>Loss-Flip Recovery</label>
+                        <select id="mLossFlip">
+                            <option value="ON">ON (Invert Bet after Loss)</option>
+                            <option value="OFF">OFF</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addNewMethod()">⚙️ AUTO-NAME & ADD SINGLE METHOD</button>
+            </div>
+
+            <!-- Created Methods List Panel -->
+            <div class="box-title">🛠️ MANAGED METHODS PANEL</div>
+            <div class="sub-methods-grid" id="labSubMethodsGrid"></div>
+        </div>
+
+        <!-- TAB 3: DEDICATED AUTO-MINED METHODS -->
+        <div id="autoMineTab" class="tab-content">
+            <div class="builder-card" style="border-color: var(--accent-cyan); background: linear-gradient(135deg, rgba(6,182,212,0.06) 0%, var(--bg-card) 100%);">
+                <div class="box-title" style="color: var(--accent-cyan); font-size:0.75rem; display:flex; justify-content:space-between;">
+                    <span>🧠 AI STRATEGY MINER (INVENT LOW-LOSS FORMULAS)</span>
+                    <span id="minerHistoryRoundsBadge" style="color:#60a5fa;">HISTORY LOGS: 0 ROUNDS</span>
+                </div>
+                <div style="font-size:0.65rem; color:var(--text-muted); margin: 6px 0 10px 0;">
+                    Pichhle recorded rounds par permutations test karke aise <b>New Formulas</b> invent karta hai jinhone <b>Max 4–5 Loss Streak</b> cross nahi ki. Sabhi auto-mined methods is alag tab me safe rehti hain:
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-action green" id="btnAutoMineToggle" style="padding:10px 14px; font-size:0.72rem; font-weight:900;" onclick="toggleAutoMineTarget()">
+                        🤖 AUTO-MINE (EVERY 100 ROUNDS): ON
+                    </button>
+                    <button class="btn-action green" style="padding:10px 14px; font-size:0.72rem; font-weight:900;" onclick="autoMineMethods(4)">
+                        ⚡ MINE NOW (MAX LOSS ≤ 4)
+                    </button>
+                    <button class="btn-action blue" style="padding:10px 14px; font-size:0.72rem; font-weight:800;" onclick="autoMineMethods(5)">
+                        🔍 MINE NOW (MAX LOSS ≤ 5)
+                    </button>
+                    <button class="btn-action purple" style="padding:10px 14px; font-size:0.72rem;" onclick="exportAllAutoMined()">
+                        💾 EXPORT MINED
+                    </button>
+                    <button class="btn-action red" style="padding:10px 14px; font-size:0.72rem;" onclick="deleteAllAutoMined()">
+                        🗑️ DELETE ALL MINED
+                    </button>
+                </div>
+            </div>
+
+            <div class="box-title">🧠 DISCOVERED AUTO-MINED METHODS PANEL</div>
+            <div class="sub-methods-grid" id="minedSubMethodsGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 🔥 GOOGLE FIREBASE CLOUD DATABASE SETUP
+        // ----------------------------------------------------
+        const firebaseConfig = {
+            projectId: "ai-studio-masterenginestra-24437d77-63a4-4444-b4fa-8962bfb5eeb2",
+            databaseURL: "https://ai-studio-masterenginestra-24437d77-63a4-4444-b4fa-8962bfb5eeb2.firebaseio.com"
+        };
+
+        let cloudDb = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            cloudDb = firebase.firestore();
+        } catch (e) {
+            console.warn("Firebase Cloud DB Init note:", e);
+        }
+
+        const API_URL_PROXY = 'https://k3-proxy.vercel.app/';
+        const CORS_PROXIES  = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?'
+        ];
+        const API_URL_W30S  = 'https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json';
+        const API_URL_W1M   = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json?ts=1784540400336';
+        const DB_NAME       = 'GANESH_SS_DB_V1';
+
+        let lastResultIssue = '';
+        let roundHistory = [];
+        let proxyPredictionsHistory = [];
+
+        let historyW30s = [], historyW1m = [];
+        let selectedMethods = new Set();
+        let apiProxyData = { issue: '---', result: 'WAIT' };
+        let isAutoPurgeEnabled = false;
+        let isAutoMineTargetRounds = true;
+
+        let methodConfigs = [
+            { id: 'c_default1', title: 'w30s-1 * w1m-3 (Sg, Flip)', type: 'CUSTOM', modA: 'w30s', lagA: 1, op: 'MUL', modB: 'w1m', lagB: 3, singleDigit: 'YES', flipDigits: '2,3,5,7', lossFlip: true, active: true, origin: 'CUSTOM' },
+            { id: 'c_default2', title: 'w1m-1 + w30s-2 (Ld)', type: 'CUSTOM', modA: 'w1m', lagA: 1, op: 'ADD', modB: 'w30s', lagB: 2, singleDigit: 'NO', flipDigits: '1,3,7,8', lossFlip: false, active: true, origin: 'CUSTOM' }
+        ];
+
+        let methodsStats = {};
+        let currentFilterText = '';
+        let currentPage = 1;
+        let currentDisplayLimit = 20;
+        let logViewMode = 'top5';
+
+        let sourceCache = {
+            w30s: new Array(11).fill(0),
+            w30s_p: new Array(11).fill(0),
+            w1m: new Array(11).fill(0),
+            w1m_p: new Array(11).fill(0)
+        };
+
+        function createTracker(title) {
+            return {
+                title, total: 0, wins: 0, losses: 0, currentStreak: 0, maxWin: 0, maxLoss: 0,
+                inFlipMode: false, fivePlusCount: 0, fivePlusFlag: false, last5: []
+            };
+        }
+
+        // 📁 Handling Direct File Upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseAndAddBulkText(text, '', file.name.replace('.txt', ''));
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function toggleAutoPurge() {
+            isAutoPurgeEnabled = !isAutoPurgeEnabled;
+            const btn = document.getElementById('btnAutoPurgeToggle');
+            btn.textContent = isAutoPurgeEnabled ? "🛡️ AUTO-PURGE (≥9 LOSS): ON" : "🛡️ AUTO-PURGE (≥9 LOSS): OFF";
+            btn.className = isAutoPurgeEnabled ? "btn-action red" : "btn-action";
+            saveToStorage();
+        }
+
+        function toggleAutoMineTarget() {
+            isAutoMineTargetRounds = !isAutoMineTargetRounds;
+            const btn = document.getElementById('btnAutoMineToggle');
+            btn.textContent = isAutoMineTargetRounds ? "🤖 AUTO-MINE (EVERY 100 ROUNDS): ON" : "🤖 AUTO-MINE: OFF";
+            btn.className = isAutoMineTargetRounds ? "btn-action green" : "btn-action";
+            saveToStorage();
+        }
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = e => e.target.result.createObjectStore('store');
+                req.onsuccess = e => resolve(e.target.result);
+                req.onerror = e => reject(e.target.error);
+            });
+        }
+
+        let saveTimeout = null;
+        let cloudSaveTimeout = null;
+
+        function saveToStorage() {
+            if (saveTimeout) clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                const sanitizedHistory = roundHistory.length > 200 ? roundHistory.slice(0, 200) : roundHistory;
+                const dataToSave = {
+                    roundHistory: sanitizedHistory, methodsStats, methodConfigs, lastResultIssue,
+                    proxyPredictionsHistory: proxyPredictionsHistory.slice(0, 20), isAutoPurgeEnabled, isAutoMineTargetRounds
+                };
+                
+                // 1. Save IndexedDB (Local Fast Cache)
+                try {
+                    const db = await openDB();
+                    const tx = db.transaction('store', 'readwrite');
+                    tx.objectStore('store').put(dataToSave, 'state');
+                } catch(e) {}
+
+                // 2. Save Google Firebase Cloud Database (24*7 Persistent)
+                if (cloudDb) {
+                    if (cloudSaveTimeout) clearTimeout(cloudSaveTimeout);
+                    cloudSaveTimeout = setTimeout(async () => {
+                        try {
+                            await cloudDb.collection('ganesh_ss_state').doc('main_v1').set({
+                                roundHistory: sanitizedHistory.slice(0, 100),
+                                methodsStats,
+                                methodConfigs: methodConfigs.slice(0, 500),
+                                lastResultIssue,
+                                proxyPredictionsHistory: proxyPredictionsHistory.slice(0, 20),
+                                updatedAt: new Date().toISOString()
+                            }, { merge: true });
+                        } catch(err) {
+                            console.warn("Cloud save note:", err);
+                        }
+                    }, 1500);
+                }
+            }, 600);
+        }
+
+        async function loadFromStorage() {
+            // Try Cloud Firestore first for 24*7 persistent data
+            if (cloudDb) {
+                try {
+                    const doc = await cloudDb.collection('ganesh_ss_state').doc('main_v1').get();
+                    if (doc.exists) {
+                        const res = doc.data();
+                        if (res && res.methodConfigs && res.methodConfigs.length > 0) {
+                            roundHistory = res.roundHistory || [];
+                            methodConfigs = res.methodConfigs || methodConfigs;
+                            methodsStats = res.methodsStats || {};
+                            lastResultIssue = res.lastResultIssue || '';
+                            proxyPredictionsHistory = res.proxyPredictionsHistory || [];
+                            isAutoPurgeEnabled = !!res.isAutoPurgeEnabled;
+                            if (res.isAutoMineTargetRounds !== undefined) isAutoMineTargetRounds = !!res.isAutoMineTargetRounds;
+                        }
+                    }
+                } catch(e) {
+                    console.warn("Cloud load fallback to local:", e);
+                }
+            }
+
+            // Fallback to local IndexedDB
+            if (methodConfigs.length <= 2) {
+                try {
+                    const db = await openDB();
+                    const tx = db.transaction('store', 'readonly');
+                    const req = tx.objectStore('store').get('state');
+                    const res = await new Promise(r => { req.onsuccess = () => r(req.result); req.onerror = () => r(null); });
+                    if (res && res.methodConfigs && res.methodConfigs.length > 0) {
+                        roundHistory = res.roundHistory || [];
+                        methodConfigs = res.methodConfigs || methodConfigs;
+                        methodsStats = res.methodsStats || {};
+                        lastResultIssue = res.lastResultIssue || '';
+                        proxyPredictionsHistory = res.proxyPredictionsHistory || [];
+                        isAutoPurgeEnabled = !!res.isAutoPurgeEnabled;
+                        if (res.isAutoMineTargetRounds !== undefined) isAutoMineTargetRounds = !!res.isAutoMineTargetRounds;
+                    }
+                } catch(e) {}
+            }
+
+            methodConfigs.forEach(c => {
+                if (!methodsStats[c.id]) methodsStats[c.id] = createTracker(c.title);
+            });
+            if (!methodsStats['master']) methodsStats['master'] = createTracker('Main Engine Master');
+
+            const btn = document.getElementById('btnAutoPurgeToggle');
+            if (btn) {
+                btn.textContent = isAutoPurgeEnabled ? "🛡️ AUTO-PURGE (≥9 LOSS): ON" : "🛡️ AUTO-PURGE (≥9 LOSS): OFF";
+                btn.className = isAutoPurgeEnabled ? "btn-action red" : "btn-action";
+            }
+        }
+
+        function initTrackers() {
+            methodsStats = {};
+            methodConfigs.forEach(c => {
+                methodsStats[c.id] = createTracker(c.title);
+            });
+            methodsStats['master'] = createTracker('Main Engine Master');
+        }
+
+        function clearAllLogsOnly() {
+            if (confirm("Clear all logs and statistics? Your added methods will NOT be deleted.")) {
+                roundHistory = [];
+                lastResultIssue = '';
+                initTrackers();
+                saveToStorage();
+                renderAllStatsUI();
+                renderLogsTable();
+                alert("Logs cleared! All methods preserved.");
+            }
+        }
+
+        function deleteAllMethods() {
+            if (confirm("Are you sure you want to DELETE ALL METHODS?")) {
+                methodConfigs = [];
+                initTrackers();
+                selectedMethods.clear();
+                saveToStorage();
+                fetchData();
+                alert("All methods removed!");
+            }
+        }
+
+        function deleteAllAutoMined() {
+            const mined = methodConfigs.filter(c => c.origin === 'AUTO_MINED');
+            if (mined.length === 0) return alert("No auto-mined methods to delete.");
+            if (confirm(`Delete all ${mined.length} Auto-Mined methods?`)) {
+                methodConfigs = methodConfigs.filter(c => c.origin !== 'AUTO_MINED');
+                mined.forEach(c => delete methodsStats[c.id]);
+                saveToStorage();
+                fetchData();
+                alert("All auto-mined methods deleted.");
+            }
+        }
+
+        function exportAllAutoMined() {
+            const mined = methodConfigs.filter(c => c.origin === 'AUTO_MINED');
+            if (mined.length === 0) return alert("No auto-mined methods to export.");
+            let exportLines = [];
+            mined.forEach(cfg => {
+                const codeA = `${cfg.modA}-${cfg.lagA}`;
+                const codeB = `${cfg.modB}-${cfg.lagB}`;
+                const opSym = cfg.op === 'MUL' ? '*' : cfg.op === 'ADD' ? '+' : cfg.op === 'SUB' ? '-' : '/';
+                exportLines.push(`${codeA} ${opSym} ${codeB} | ${cfg.singleDigit} | ${cfg.lossFlip ? 'ON' : 'OFF'} | ${cfg.flipDigits}`);
+            });
+            downloadText(exportLines.join('\n'), `Auto_Mined_Methods_${mined.length}_${Date.now()}.txt`);
+        }
+
+        function deleteBatch(batchId, batchName) {
+            if (confirm(`Delete all methods in batch "${batchName}"?`)) {
+                methodConfigs = methodConfigs.filter(c => c.batchId !== batchId);
+                saveToStorage();
+                fetchData();
+                alert(`Batch "${batchName}" deleted!`);
+            }
+        }
+
+        function exportBatch(batchId, batchName) {
+            const batchMethods = methodConfigs.filter(c => c.batchId === batchId);
+            if (batchMethods.length === 0) return alert("No methods in this batch.");
+            let exportLines = [];
+            batchMethods.forEach(cfg => {
+                const codeA = `${cfg.modA}-${cfg.lagA}`;
+                const codeB = `${cfg.modB}-${cfg.lagB}`;
+                const opSym = cfg.op === 'MUL' ? '*' : cfg.op === 'ADD' ? '+' : cfg.op === 'SUB' ? '-' : '/';
+                exportLines.push(`${codeA} ${opSym} ${codeB} | ${cfg.singleDigit} | ${cfg.lossFlip ? 'ON' : 'OFF'} | ${cfg.flipDigits}`);
+            });
+            downloadText(exportLines.join('\n'), `Batch_${batchName}_${batchMethods.length}_${Date.now()}.txt`);
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function reduceToSingleDigit(num) {
+            let n = Math.abs(num);
+            while (n >= 10) {
+                let s = 0;
+                while (n > 0) { s += n % 10; n = Math.floor(n / 10); }
+                n = s;
+            }
+            return num < 0 ? -n : n;
+        }
+
+        function refreshSourceCache() {
+            for (let i = 1; i <= 10; i++) {
+                if (historyW30s.length >= i) {
+                    sourceCache.w30s[i] = historyW30s[i-1].number;
+                    const p = String(historyW30s[i-1].period);
+                    sourceCache.w30s_p[i] = parseInt(p.charAt(p.length - 1)) || 0;
+                }
+                if (historyW1m.length >= i) {
+                    sourceCache.w1m[i] = historyW1m[i-1].number;
+                    const p = String(historyW1m[i-1].period);
+                    sourceCache.w1m_p[i] = parseInt(p.charAt(p.length - 1)) || 0;
+                }
+            }
+        }
+
+        function getPossibleFormulasStats(requestedCount = 5000) {
+            const existingSigs = new Set(methodConfigs.map(c => `${c.modA}_${c.lagA}_${c.op}_${c.modB}_${c.lagB}_${c.singleDigit}_${c.flipDigits}_${c.lossFlip}`));
+            const sourcesA = ['w30s', 'w30s_p', 'w1m', 'w1m_p'];
+            const sourcesB = ['w1m', 'w1m_p', 'w30s', 'w30s_p'];
+            const ops = ['MUL', 'ADD', 'SUB', 'AVG'];
+            const opSymbols = { MUL: '*', ADD: '+', SUB: '-', AVG: '/' };
+            const singleOpts = ['YES', 'NO'];
+            const lossOpts = [true, false];
+            const flipSets = ['2,3,5,7', '1,3,7,8', '0,2,4,6', '1,4,6,9', '3,5,8,9', '0,1,5,6', '1,2,3,4', '5,6,7,8', '0,3,6,9', '2,4,6,8', '1,3,5,7', '0,2,5,8', '3,4,5,6', '7,8,9,0'];
+
+            const totalPossible = sourcesA.length * 10 * sourcesB.length * 10 * ops.length * singleOpts.length * lossOpts.length * flipSets.length;
+            const pool = [];
+
+            for (let sA of sourcesA) {
+                for (let lagA = 1; lagA <= 10; lagA++) {
+                    for (let sB of sourcesB) {
+                        for (let lagB = 1; lagB <= 10; lagB++) {
+                            for (let op of ops) {
+                                for (let sg of singleOpts) {
+                                    for (let lf of lossOpts) {
+                                        for (let fs of flipSets) {
+                                            const sig = `${sA}_${lagA}_${op}_${sB}_${lagB}_${sg}_${fs}_${lf}`;
+                                            if (!existingSigs.has(sig)) {
+                                                pool.push(`${sA}-${lagA} ${opSymbols[op]} ${sB}-${lagB} | ${sg} | ${lf ? 'ON' : 'OFF'} | ${fs}`);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const step = 37;
+            const list = [];
+            const picked = new Set();
+            const total = pool.length;
+            let idx = 0;
+            const countToPick = Math.min(requestedCount, total);
+
+            while (list.length < countToPick && picked.size < total) {
+                if (!picked.has(idx)) {
+                    picked.add(idx);
+                    list.push(pool[idx]);
+                }
+                idx = (idx + step) % total;
+            }
+
+            return { list, totalPossible, available: total };
+        }
+
+        function updateCountersUI() {
+            const stats = getPossibleFormulasStats(1);
+            document.getElementById('cntTotalPossible').textContent = stats.totalPossible.toLocaleString();
+            document.getElementById('cntCurrentAdded').textContent = methodConfigs.length.toLocaleString();
+            document.getElementById('cntAvailable').textContent = stats.available.toLocaleString();
+
+            const customCount = methodConfigs.filter(c => c.origin !== 'AUTO_MINED').length;
+            const minedCount = methodConfigs.filter(c => c.origin === 'AUTO_MINED').length;
+            document.getElementById('tabLabCount').textContent = customCount;
+            document.getElementById('tabMinedCount').textContent = minedCount;
+        }
+
+        function handleGenerateCustomBatch() {
+            const count = parseInt(document.getElementById('customAddCount').value) || 5000;
+            let batchName = document.getElementById('customBatchName').value.trim();
+            if (!batchName) batchName = `${count} Batch (${new Date().toLocaleTimeString()})`;
+
+            const stats = getPossibleFormulasStats(count);
+            if (stats.list.length === 0) return alert("All combinations already added!");
+
+            const batchId = `b_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+            parseAndAddBulkText(stats.list.join('\n'), batchId, batchName);
+            document.getElementById('customBatchName').value = '';
+        }
+
+        function handleDownloadCustomBatch() {
+            const count = parseInt(document.getElementById('customAddCount').value) || 5000;
+            const stats = getPossibleFormulasStats(count);
+            if (stats.list.length === 0) return alert("No available combinations.");
+            downloadText(stats.list.join('\n'), `Batch_${count}_Methods_${Date.now()}.txt`);
+        }
+
+        function parseAndAddBulkText(rawText, batchId = '', batchName = '', origin = 'CUSTOM') {
+            if (!rawText.trim()) return alert("Please paste formulas or upload file first!");
+            const lines = rawText.split('\n');
+            let addedCount = 0;
+            let dupCount = 0;
+
+            const existingSignatures = new Set(methodConfigs.map(c => `${c.modA}_${c.lagA}_${c.op}_${c.modB}_${c.lagB}_${c.singleDigit}_${c.flipDigits}_${c.lossFlip}`));
+
+            lines.forEach(line => {
+                const cleanLine = line.trim();
+                if (!cleanLine || cleanLine.startsWith('#')) return;
+
+                const parts = cleanLine.split('|').map(p => p.trim());
+                const expr = parts[0];
+
+                const match = expr.match(/^([a-z0-9_]+)-(\d+)\s*([\*\+\-\/])\s*([a-z0-9_]+)-(\d+)$/i);
+                if (match) {
+                    const modA = match[1].toLowerCase();
+                    const lagA = Math.min(10, Math.max(1, parseInt(match[2])));
+                    const rawOp = match[3];
+                    const modB = match[4].toLowerCase();
+                    const lagB = Math.min(10, Math.max(1, parseInt(match[5])));
+
+                    let op = 'MUL';
+                    if (rawOp === '+') op = 'ADD';
+                    if (rawOp === '-') op = 'SUB';
+                    if (rawOp === '/') op = 'AVG';
+
+                    const singleDigit = (parts[1] && parts[1].toUpperCase() === 'NO') ? 'NO' : 'YES';
+                    const lossFlip = (parts[2] && parts[2].toUpperCase() === 'ON') ? true : false;
+                    const flipDigits = parts[3] ? parts[3] : '2,3,5,7';
+
+                    const sig = `${modA}_${lagA}_${op}_${modB}_${lagB}_${singleDigit}_${flipDigits}_${lossFlip}`;
+                    if (existingSignatures.has(sig)) {
+                        dupCount++;
+                        return;
+                    }
+                    existingSignatures.add(sig);
+
+                    const codeA = `${modA}-${lagA}`;
+                    const codeB = `${modB}-${lagB}`;
+                    const opSym = op === 'MUL' ? '*' : op === 'ADD' ? '+' : op === 'SUB' ? '-' : '/';
+                    const autoTitle = `${codeA} ${opSym} ${codeB} (${singleDigit === 'YES' ? 'Sg' : 'Ld'})`;
+
+                    const id = 'cust_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                    const newCfg = {
+                        id, title: autoTitle, type: 'CUSTOM', modA, lagA, op, modB, lagB,
+                        singleDigit, flipDigits, lossFlip, active: true, batchId, batchName, origin
+                    };
+
+                    methodConfigs.push(newCfg);
+                    methodsStats[id] = createTracker(autoTitle);
+                    addedCount++;
+                }
+            });
+
+            saveToStorage();
+            fetchData();
+            document.getElementById('bulkTextarea').value = '';
+            alert(`Success! ${addedCount} Unique Methods added in "${batchName || 'Default'}". (${dupCount} duplicates skipped)`);
+        }
+
+        function processBulkFormulas() {
+            const rawText = document.getElementById('bulkTextarea').value;
+            parseAndAddBulkText(rawText);
+        }
+
+        function autoMineMethods(maxAllowedLoss, silent = false) {
+            if (roundHistory.length < 50) {
+                if (!silent) alert(`Auto Mining requires at least 50 recorded rounds! (Current: ${roundHistory.length} rounds)`);
+                return;
+            }
+
+            const replay = [...roundHistory].reverse();
+            const existingSigs = new Set(methodConfigs.map(c => `${c.modA}_${c.lagA}_${c.op}_${c.modB}_${c.lagB}_${c.singleDigit}_${c.flipDigits}_${c.lossFlip}`));
+            const sourcesA = ['w30s', 'w30s_p', 'w1m', 'w1m_p'];
+            const sourcesB = ['w1m', 'w1m_p', 'w30s', 'w30s_p'];
+            const ops = ['MUL', 'ADD', 'SUB', 'AVG'];
+            const singleOpts = ['YES', 'NO'];
+            const lossOpts = [true, false];
+            const flipSets = ['2,3,5,7', '1,3,7,8', '0,2,4,6', '1,4,6,9', '3,5,8,9', '0,1,5,6'];
+
+            const numRounds = replay.length;
+            const historyNumbers = replay.map(r => r.actualNum);
+            const historyPeriods = replay.map(r => r.period);
+            const historyActualSizes = replay.map(r => r.actualSize);
+            const historyProxyPreds = replay.map(r => r.results['master']?.pred === 'SMALL' ? 'SMALL' : 'BIG');
+
+            const candidates = [];
+            for (let sA of sourcesA) {
+                for (let lagA = 1; lagA <= 5; lagA++) {
+                    for (let sB of sourcesB) {
+                        for (let lagB = 1; lagB <= 5; lagB++) {
+                            for (let op of ops) {
+                                for (let sg of singleOpts) {
+                                    for (let lf of lossOpts) {
+                                        for (let fs of flipSets) {
+                                            const sig = `${sA}_${lagA}_${op}_${sB}_${lagB}_${sg}_${fs}_${lf}`;
+                                            if (existingSigs.has(sig)) continue;
+
+                                            const flipList = fs.split(',').map(x => parseInt(x.trim()));
+                                            let wins = 0, losses = 0, streak = 0, maxLoss = 0, inFlip = false, failed = false;
+                                            const startIdx = Math.max(lagA, lagB) + 1;
+
+                                            for (let i = startIdx; i < numRounds; i++) {
+                                                const actual = historyActualSizes[i];
+                                                const proxyBase = historyProxyPreds[i];
+
+                                                const valA = sA.includes('_p') ? parseInt(historyPeriods[i - lagA].slice(-1)) || 0 : historyNumbers[i - lagA] || 0;
+                                                const valB = sB.includes('_p') ? parseInt(historyPeriods[i - lagB].slice(-1)) || 0 : historyNumbers[i - lagB] || 0;
+
+                                                let res = 0;
+                                                if (op === 'MUL') res = valA * valB;
+                                                else if (op === 'ADD') res = valA + valB;
+                                                else if (op === 'SUB') res = valA - valB;
+                                                else if (op === 'AVG') res = valB !== 0 ? Math.floor(valA / valB) : Math.round((valA + valB) / 2);
+
+                                                const digit = sg === 'YES' ? Math.abs(reduceToSingleDigit(res)) : Math.abs(res % 10);
+                                                let pred = proxyBase;
+                                                if (flipList.includes(digit)) pred = pred === 'BIG' ? 'SMALL' : 'BIG';
+                                                if (lf && inFlip) pred = pred === 'BIG' ? 'SMALL' : 'BIG';
+
+                                                if (pred === actual) {
+                                                    wins++;
+                                                    streak = streak >= 0 ? streak + 1 : 1;
+                                                    inFlip = false;
+                                                } else {
+                                                    losses++;
+                                                    streak = streak <= 0 ? streak - 1 : -1;
+                                                    maxLoss = Math.max(maxLoss, Math.abs(streak));
+                                                    if (maxLoss > maxAllowedLoss) { failed = true; break; }
+                                                    if (lf) inFlip = true;
+                                                }
+                                            }
+
+                                            if (!failed && (wins + losses >= 30) && maxLoss <= maxAllowedLoss) {
+                                                const winRate = (wins / (wins + losses)) * 100;
+                                                const opSym = op === 'MUL' ? '*' : op === 'ADD' ? '+' : op === 'SUB' ? '-' : '/';
+                                                const title = `${sA}-${lagA} ${opSym} ${sB}-${lagB} (${sg === 'YES' ? 'Sg' : 'Ld'}|Miner)`;
+                                                candidates.push({
+                                                    cfg: {
+                                                        id: 'miner_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                                        title, type: 'CUSTOM', modA: sA, lagA, op, modB: sB, lagB,
+                                                        singleDigit: sg, flipDigits: fs, lossFlip: lf, active: true, origin: 'AUTO_MINED'
+                                                    },
+                                                    maxLoss, winRate
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            candidates.sort((a, b) => a.maxLoss !== b.maxLoss ? a.maxLoss - b.maxLoss : b.winRate - a.winRate);
+            const chosen = candidates.slice(0, 15);
+
+            if (chosen.length === 0) {
+                if (!silent) alert(`No new formula met Max Loss <= ${maxAllowedLoss}. Let more rounds accumulate!`);
+                return;
+            }
+
+            chosen.forEach(c => {
+                methodConfigs.unshift(c.cfg);
+                methodsStats[c.cfg.id] = createTracker(c.cfg.title);
+            });
+
+            saveToStorage();
+            fetchData();
+            if (!silent) alert(`🎯 AI Miner invented ${chosen.length} Low-Loss Methods! (Saved to Auto-Mined Tab)`);
+        }
+
+        function toggleSelect(id) {
+            if (selectedMethods.has(id)) selectedMethods.delete(id);
+            else selectedMethods.add(id);
+            const btn = document.getElementById('selectAllBtn');
+            if (btn) btn.textContent = selectedMethods.size === methodConfigs.length ? "DESELECT ALL" : "SELECT ALL";
+        }
+
+        function toggleSelectAll() {
+            const btn = document.getElementById('selectAllBtn');
+            if (selectedMethods.size === methodConfigs.length && methodConfigs.length > 0) {
+                selectedMethods.clear();
+                if (btn) btn.textContent = "SELECT ALL";
+            } else {
+                methodConfigs.forEach(c => selectedMethods.add(c.id));
+                if (btn) btn.textContent = "DESELECT ALL";
+            }
+            renderAllStatsUI();
+        }
+
+        function downloadText(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+        }
+
+        function exportSelectedMethods() {
+            if (selectedMethods.size === 0) return alert("Select at least one method to export!");
+            let exportLines = [];
+            methodConfigs.filter(cfg => selectedMethods.has(cfg.id)).forEach(cfg => {
+                const codeA = `${cfg.modA}-${cfg.lagA}`;
+                const codeB = `${cfg.modB}-${cfg.lagB}`;
+                const opSym = cfg.op === 'MUL' ? '*' : cfg.op === 'ADD' ? '+' : cfg.op === 'SUB' ? '-' : '/';
+                exportLines.push(`${codeA} ${opSym} ${codeB} | ${cfg.singleDigit} | ${cfg.lossFlip ? 'ON' : 'OFF'} | ${cfg.flipDigits}`);
+            });
+            downloadText(exportLines.join('\n'), `Selected_Methods_${selectedMethods.size}_${Date.now()}.txt`);
+        }
+
+        function exportAllMethods() {
+            if (methodConfigs.length === 0) return alert("No methods to export!");
+            let exportLines = [];
+            methodConfigs.forEach(cfg => {
+                const codeA = `${cfg.modA}-${cfg.lagA}`;
+                const codeB = `${cfg.modB}-${cfg.lagB}`;
+                const opSym = cfg.op === 'MUL' ? '*' : cfg.op === 'ADD' ? '+' : cfg.op === 'SUB' ? '-' : '/';
+                exportLines.push(`${codeA} ${opSym} ${codeB} | ${cfg.singleDigit} | ${cfg.lossFlip ? 'ON' : 'OFF'} | ${cfg.flipDigits}`);
+            });
+            downloadText(exportLines.join('\n'), `All_Methods_${methodConfigs.length}_${Date.now()}.txt`);
+        }
+
+        function exportSingleMethod(id) {
+            const cfg = methodConfigs.find(c => c.id === id);
+            if (!cfg) return;
+            const codeA = `${cfg.modA}-${cfg.lagA}`;
+            const codeB = `${cfg.modB}-${cfg.lagB}`;
+            const opSym = cfg.op === 'MUL' ? '*' : cfg.op === 'ADD' ? '+' : cfg.op === 'SUB' ? '-' : '/';
+            downloadText(`${codeA} ${opSym} ${codeB} | ${cfg.singleDigit} | ${cfg.lossFlip ? 'ON' : 'OFF'} | ${cfg.flipDigits}`, `Method_${codeA}_${opSym}_${codeB}.txt`);
+        }
+
+        function computeFastSinglePrediction(cfg, mainEnginePred, inFlipMode) {
+            if (!cfg.active) return 'OFF';
+            const valA = sourceCache[cfg.modA]?.[cfg.lagA] ?? 0;
+            const valB = sourceCache[cfg.modB]?.[cfg.lagB] ?? 0;
+
+            let resultVal = 0;
+            if (cfg.op === 'MUL') resultVal = valA * valB;
+            else if (cfg.op === 'ADD') resultVal = valA + valB;
+            else if (cfg.op === 'SUB') resultVal = valA - valB;
+            else if (cfg.op === 'AVG') resultVal = valB !== 0 ? Math.floor(valA / valB) : Math.round((valA + valB) / 2);
+
+            let targetDigit = cfg.singleDigit === 'YES' ? Math.abs(reduceToSingleDigit(resultVal)) : Math.abs(resultVal % 10);
+            let basePred = mainEnginePred;
+            if ((cfg.flipDigits || '2,3,5,7').indexOf(String(targetDigit)) !== -1) {
+                basePred = mainEnginePred === 'BIG' ? 'SMALL' : 'BIG';
+            }
+            if (cfg.lossFlip && inFlipMode) {
+                basePred = basePred === 'BIG' ? 'SMALL' : 'BIG';
+            }
+            return basePred;
+        }
+
+        function computeCustomMethodPrediction(cfg, mainEnginePred) {
+            const valA = sourceCache[cfg.modA]?.[cfg.lagA] ?? 0;
+            const valB = sourceCache[cfg.modB]?.[cfg.lagB] ?? 0;
+
+            let resultVal = 0;
+            let opSymbol = '*';
+            if (cfg.op === 'MUL') { resultVal = valA * valB; opSymbol = '*'; }
+            else if (cfg.op === 'ADD') { resultVal = valA + valB; opSymbol = '+'; }
+            else if (cfg.op === 'SUB') { resultVal = valA - valB; opSymbol = '-'; }
+            else if (cfg.op === 'AVG') { resultVal = valB !== 0 ? Math.floor(valA / valB) : Math.round((valA + valB) / 2); opSymbol = '/'; }
+
+            let targetDigit = (cfg.singleDigit === 'YES') ? Math.abs(reduceToSingleDigit(resultVal)) : Math.abs(resultVal % 10);
+            let invertDigits = (cfg.flipDigits || '2,3,5,7').split(',').map(x => parseInt(x.trim()));
+            
+            let basePred = mainEnginePred;
+            let modeApplied = 'NORMAL';
+            if (invertDigits.includes(targetDigit)) {
+                basePred = mainEnginePred === 'BIG' ? 'SMALL' : 'BIG';
+                modeApplied = 'FLIP';
+            }
+
+            const st = methodsStats[cfg.id];
+            let finalPred = basePred;
+            if (cfg.lossFlip && st && st.inFlipMode) {
+                finalPred = basePred === 'BIG' ? 'SMALL' : 'BIG';
+                modeApplied += '+LOSS_FLIP';
+            }
+
+            const codeA = `${cfg.modA}-${cfg.lagA}`;
+            const codeB = `${cfg.modB}-${cfg.lagB}`;
+            return {
+                pred: finalPred,
+                formulaStr: `${codeA} ${opSymbol} ${codeB}`,
+                rawCalc: `${valA} ${opSymbol} ${valB} = ${resultVal} ➔ Dig:${targetDigit} [${modeApplied}]`
+            };
+        }
+
+        function addNewMethod() {
+            const modA = document.getElementById('mModA').value;
+            const lagA = parseInt(document.getElementById('mLagA').value) || 1;
+            const op = document.getElementById('mOp').value;
+            const modB = document.getElementById('mModB').value;
+            const lagB = parseInt(document.getElementById('mLagB').value) || 3;
+            const singleDigit = document.getElementById('mSingleDigit').value;
+            const flipDigits = document.getElementById('mFlipDigits').value.trim() || '2,3,5,7';
+            const lossFlip = document.getElementById('mLossFlip').value === 'ON';
+
+            const codeA = `${modA}-${lagA}`;
+            const codeB = `${modB}-${lagB}`;
+            const opSym = op === 'MUL' ? '*' : op === 'ADD' ? '+' : op === 'SUB' ? '-' : '/';
+            const autoTitle = `${codeA} ${opSym} ${codeB} (${singleDigit === 'YES' ? 'Sg' : 'Ld'})`;
+
+            const id = 'cust_' + Date.now();
+            const newCfg = {
+                id, title: autoTitle, type: 'CUSTOM', modA, lagA, op, modB, lagB,
+                singleDigit, flipDigits, lossFlip, active: true, origin: 'CUSTOM'
+            };
+
+            methodConfigs.push(newCfg);
+            methodsStats[id] = createTracker(autoTitle);
+
+            saveToStorage();
+            fetchData();
+            alert(`New Custom Method Added: ${autoTitle}`);
+        }
+
+        function toggleMethodActive(id) {
+            const cfg = methodConfigs.find(c => c.id === id);
+            if (cfg) {
+                cfg.active = !cfg.active;
+                saveToStorage();
+                fetchData();
+            }
+        }
+
+        function deleteMethod(id) {
+            if (confirm("Delete this method completely?")) {
+                methodConfigs = methodConfigs.filter(c => c.id !== id);
+                delete methodsStats[id];
+                selectedMethods.delete(id);
+                saveToStorage();
+                fetchData();
+            }
+        }
+
+        async function exportLogsToTxt() {
+            if (roundHistory.length === 0) return alert("No logs available to export!");
+
+            let txtContent = "===================================================\n";
+            txtContent += "    GANESH SS - WIN GO MASTER ENGINE LOGS         \n";
+            txtContent += `    Total Rounds: ${roundHistory.length} | Methods: ${methodConfigs.length}\n`;
+            txtContent += "===================================================\n\n";
+
+            for (let idx = 0; idx < roundHistory.length; idx++) {
+                const r = roundHistory[idx];
+                const roundNo = roundHistory.length - idx;
+                txtContent += `Round #${roundNo} | Period: ${r.period} | Result: ${r.actualNum} (${r.actualSize})\n`;
+                txtContent += `  [MAIN ENGINE]: ${r.results['master']?.pred || '-'}\n`;
+                
+                for (let j = 0; j < Math.min(methodConfigs.length, 50); j++) {
+                    const cfg = methodConfigs[j];
+                    const res = r.results[cfg.id];
+                    if (res) txtContent += `  [${cfg.title}]: ${res.pred} (${res.win ? 'WIN' : 'LOSS'})\n`;
+                }
+                txtContent += "---------------------------------------------------\n";
+            }
+
+            downloadText(txtContent, `Ganesh_SS_Logs_${roundHistory.length}Rounds_${Date.now()}.txt`);
+        }
+
+        async function fetchProxyWithFallback() {
+            const fetchUrl = `${API_URL_PROXY}${API_URL_PROXY.includes('?') ? '&' : '?'}t=${Date.now()}`;
+            try {
+                const res = await fetch(fetchUrl);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json) return json;
+                }
+            } catch (e) {}
+
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const proxyUrl = proxy + encodeURIComponent(fetchUrl);
+                    const res = await fetch(proxyUrl);
+                    if (res.ok) {
+                        let json = await res.json();
+                        if (proxy.includes('allorigins') && typeof json === 'object' && json.contents) {
+                            try { json = JSON.parse(json.contents); } catch(err) {}
+                        }
+                        if (json) return json;
+                    }
+                } catch (err) {}
+            }
+            return null;
+        }
+
+        async function fetchData() {
+            try {
+                const [resProxy, res30s, res1m] = await Promise.all([
+                    fetchProxyWithFallback(),
+                    fetch(`${API_URL_W30S}?t=${Date.now()}`).then(r => r.json()).catch(() => null),
+                    fetch(`${API_URL_W1M}&t=${Date.now()}`).then(r => r.json()).catch(() => null)
+                ]);
+
+                if (resProxy) {
+                    let records = Array.isArray(resProxy) ? resProxy : (resProxy.data?.records || resProxy.data?.list || resProxy.data || [resProxy]);
+                    const topRecord = records[0] || resProxy;
+                    const issueVal = topRecord.issue || topRecord.period || topRecord.issueNumber || topRecord.issue_no;
+                    let resultVal = topRecord.result || topRecord.number || topRecord.drawNumber || topRecord.type;
+
+                    if (resultVal !== undefined && resultVal !== null) {
+                        resultVal = !isNaN(resultVal) ? (parseInt(resultVal) >= 5 ? 'BIG' : 'SMALL') : String(resultVal).toUpperCase();
+                    }
+
+                    if (issueVal) {
+                        apiProxyData = { issue: String(issueVal), result: resultVal || 'WAIT' };
+                    }
+
+                    if (records.length > 0) {
+                        const formatted = records.map(rec => {
+                            const iss = rec.issue || rec.period || rec.issueNumber || rec.issue_no;
+                            let res = rec.result || rec.number || rec.drawNumber || rec.type;
+                            if (res !== undefined && res !== null) {
+                                res = !isNaN(res) ? (parseInt(res) >= 5 ? 'BIG' : 'SMALL') : String(res).toUpperCase();
+                            }
+                            return iss ? { issue: String(iss), pred: res || 'WAIT' } : null;
+                        }).filter(Boolean);
+
+                        const map = new Map();
+                        formatted.forEach(r => map.set(r.issue, r.pred));
+                        proxyPredictionsHistory.forEach(r => { if (!map.has(r.issue)) map.set(r.issue, r.pred); });
+                        proxyPredictionsHistory = Array.from(map.entries()).map(([issue, pred]) => ({ issue, pred })).slice(0, 15);
+                    }
+                }
+
+                if (res30s?.data?.list) historyW30s = res30s.data.list.map(i => ({ period: String(i.issueNumber), number: parseInt(i.number) }));
+                if (res1m?.data?.list) historyW1m = res1m.data.list.map(i => ({ period: String(i.issueNumber), number: parseInt(i.number) }));
+
+                refreshSourceCache();
+
+                if (historyW30s.length > 0) {
+                    const lastFinishedIssue = historyW30s[0].period;
+                    let activeLivePeriod = apiProxyData.issue !== '---' ? apiProxyData.issue : (BigInt(lastFinishedIssue) + 1n).toString();
+
+                    renderTopResults();
+                    renderProxyPredictionsHistory();
+
+                    if (lastResultIssue !== '' && lastResultIssue !== lastFinishedIssue) {
+                        const prevResultObj = historyW30s.find(h => h.period === lastFinishedIssue);
+                        if (prevResultObj) {
+                            processResult(prevResultObj.number >= 5 ? 'BIG' : 'SMALL', prevResultObj.number, lastFinishedIssue);
+                        }
+                    }
+
+                    updateLiveUI(activeLivePeriod);
+                    lastResultIssue = lastFinishedIssue;
+                    saveToStorage();
+                }
+            } catch (e) {
+                console.warn('Fetch Error:', e);
+            }
+        }
+
+        function processResult(actualSize, actualNum, processedPeriod) {
+            const mainPredStr = String(apiProxyData.result).toUpperCase() === 'BIG' ? 'BIG' : 'SMALL';
+            const masterIsWin = mainPredStr === actualSize;
+            updateTrackerStats({ id: 'master' }, masterIsWin);
+
+            const compactResults = { master: { pred: mainPredStr, win: masterIsWin } };
+            const purgedIds = new Set();
+
+            for (let i = 0; i < methodConfigs.length; i++) {
+                const cfg = methodConfigs[i];
+                let st = methodsStats[cfg.id];
+                if (!st) {
+                    st = createTracker(cfg.title);
+                    methodsStats[cfg.id] = st;
+                }
+
+                const pred = computeFastSinglePrediction(cfg, mainPredStr, st.inFlipMode);
+                const isWin = pred === actualSize;
+
+                if (i < 20 || selectedMethods.has(cfg.id)) {
+                    compactResults[cfg.id] = { pred, win: isWin };
+                }
+
+                updateTrackerStats(cfg, isWin);
+
+                // Auto-purge methods with >= 9 consecutive losses
+                if (isAutoPurgeEnabled && st && (st.maxLoss >= 9 || Math.abs(st.currentStreak) >= 9)) {
+                    purgedIds.add(cfg.id);
+                }
+            }
+
+            if (purgedIds.size > 0) {
+                methodConfigs = methodConfigs.filter(c => !purgedIds.has(c.id));
+            }
+
+            roundHistory.unshift({
+                period: processedPeriod,
+                actualSize: actualSize,
+                actualNum: actualNum,
+                results: compactResults
+            });
+            if (roundHistory.length > 200) roundHistory = roundHistory.slice(0, 200);
+
+            // Auto-mine every 100 rounds
+            if (isAutoMineTargetRounds && roundHistory.length >= 100 && roundHistory.length % 100 === 0) {
+                autoMineMethods(4, true);
+            }
+
+            if (roundHistory.length % 10 === 0) {
+                sortMethodsByPerformance();
+            }
+
+            renderLogsTable();
+            renderAllStatsUI();
+            saveToStorage();
+        }
+
+        function manualSortTrigger() {
+            sortMethodsByPerformance();
+            renderAllStatsUI();
+            alert("Auto-Sorted all methods by Lowest Max Loss & Highest Accuracy!");
+        }
+
+        function sortMethodsByPerformance() {
+            methodConfigs.sort((a, b) => {
+                const stA = methodsStats[a.id] || createTracker('');
+                const stB = methodsStats[b.id] || createTracker('');
+
+                const maxLossA = stA.maxLoss || 0;
+                const maxLossB = stB.maxLoss || 0;
+                if (maxLossA !== maxLossB) return maxLossA - maxLossB;
+
+                const lossStreakA = stA.currentStreak < 0 ? Math.abs(stA.currentStreak) : 0;
+                const lossStreakB = stB.currentStreak < 0 ? Math.abs(stB.currentStreak) : 0;
+                if (lossStreakA !== lossStreakB) return lossStreakA - lossStreakB;
+
+                const accA = stA.total > 0 ? (stA.wins / stA.total) : 0;
+                const accB = stB.total > 0 ? (stB.wins / stB.total) : 0;
+                return accB - accA;
+            });
+        }
+
+        function updateTrackerStats(cfg, isWin) {
+            const st = methodsStats[cfg.id];
+            if (!st) return;
+
+            st.total++;
+            st.last5.unshift(isWin ? 'W' : 'L');
+            if (st.last5.length > 5) st.last5.pop();
+
+            if (isWin) {
+                st.wins++;
+                st.currentStreak = st.currentStreak >= 0 ? st.currentStreak + 1 : 1;
+                st.maxWin = Math.max(st.maxWin, st.currentStreak);
+                st.inFlipMode = false;
+                st.fivePlusFlag = false;
+            } else {
+                st.losses++;
+                st.currentStreak = st.currentStreak <= 0 ? st.currentStreak - 1 : -1;
+                const currentLossStreak = Math.abs(st.currentStreak);
+                st.maxLoss = Math.max(st.maxLoss, currentLossStreak);
+                
+                if (currentLossStreak >= 5 && !st.fivePlusFlag) {
+                    st.fivePlusCount++;
+                    st.fivePlusFlag = true;
+                }
+
+                if (cfg.lossFlip) st.inFlipMode = true;
+            }
+        }
+
+        function renderTopResults() {
+            const gridW30s = document.getElementById('w30sResultsGrid');
+            const gridW1m = document.getElementById('w1mResultsGrid');
+
+            if (historyW30s.length > 0) {
+                gridW30s.innerHTML = historyW30s.slice(0, 10).map(item => {
+                    const size = item.number >= 5 ? 'BIG' : 'SMALL';
+                    const lastDigit = String(item.period).slice(-1);
+                    return `<div class="res-pill ${size.toLowerCase()}"><div class="num">${item.number}</div><div class="size">${size}</div><div class="period-digit">P:${lastDigit}</div></div>`;
+                }).join('');
+            }
+
+            if (historyW1m.length > 0) {
+                gridW1m.innerHTML = historyW1m.slice(0, 10).map(item => {
+                    const size = item.number >= 5 ? 'BIG' : 'SMALL';
+                    const lastDigit = String(item.period).slice(-1);
+                    return `<div class="res-pill ${size.toLowerCase()}"><div class="num">${item.number}</div><div class="size">${size}</div><div class="period-digit">P:${lastDigit}</div></div>`;
+                }).join('');
+            }
+        }
+
+        function renderProxyPredictionsHistory() {
+            const grid = document.getElementById('proxyPredsGrid');
+            if (!grid) return;
+            grid.innerHTML = proxyPredictionsHistory.slice(0, 10).map(item => {
+                const pred = String(item.pred).toUpperCase();
+                const sizeClass = pred === 'BIG' ? 'big' : (pred === 'SMALL' ? 'small' : '');
+                const lastDigit = String(item.issue).slice(-1);
+                return `<div class="res-pill ${sizeClass}"><div class="num">${pred}</div><div class="size">${pred}</div><div class="period-digit">P:${lastDigit}</div></div>`;
+            }).join('');
+        }
+
+        function handleSearchChange() {
+            currentFilterText = document.getElementById('methodSearchInput').value.trim().toLowerCase();
+            currentPage = 1;
+            renderAllStatsUI();
+        }
+
+        function changePageSize(val) {
+            currentDisplayLimit = parseInt(val) || 0;
+            currentPage = 1;
+            renderAllStatsUI();
+        }
+
+        function navigatePage(delta) {
+            currentPage += delta;
+            renderAllStatsUI();
+        }
+
+        function setLogView(mode) {
+            logViewMode = mode;
+            document.getElementById('btnLogTop5').className = mode === 'top5' ? 'btn-sm toggle-on' : 'btn-sm toggle-off';
+            document.getElementById('btnLogSelected').className = mode === 'selected' ? 'btn-sm toggle-on' : 'btn-sm toggle-off';
+            renderLogsTable();
+        }
+
+        function updateLiveUI(currentPeriod) {
+            document.getElementById('currentPeriod').textContent = currentPeriod || '---';
+            const mPred = String(apiProxyData.result).toUpperCase() === 'BIG' ? 'BIG' : 'SMALL';
+            const mEl = document.getElementById('masterPredVal');
+            mEl.textContent = mPred;
+            mEl.className = mPred === 'BIG' ? 'val big-text' : 'val small-text';
+
+            document.getElementById('masterCalcVal').textContent = `Direct API Proxy Signal | Issue: ${currentPeriod}`;
+            document.getElementById('sumTotalMethods').textContent = methodConfigs.length;
+            
+            const badge = document.getElementById('minerHistoryRoundsBadge');
+            if (badge) badge.textContent = `HISTORY LOGS: ${roundHistory.length} ROUNDS`;
+
+            const roundsUntilSort = 10 - (roundHistory.length % 10);
+            document.getElementById('sumSortCountdown').textContent = `In ${roundsUntilSort} Rounds`;
+
+            renderLabAndMinedSubGrids();
+            renderBatchesUI();
+            updateCountersUI();
+            renderAllStatsUI();
+        }
+
+        function renderBatchesUI() {
+            const batchMap = new Map();
+            methodConfigs.forEach(c => {
+                if (c.batchId) {
+                    const existing = batchMap.get(c.batchId);
+                    if (existing) {
+                        existing.count++;
+                    } else {
+                        batchMap.set(c.batchId, { batchId: c.batchId, batchName: c.batchName || 'Unnamed', count: 1 });
+                    }
+                }
+            });
+
+            const batches = Array.from(batchMap.values());
+            document.getElementById('batchCountHeader').textContent = batches.length;
+            const container = document.getElementById('batchListContainer');
+
+            if (batches.length === 0) {
+                container.innerHTML = '<div style="font-size:0.68rem; color:var(--text-muted); padding:10px;">Abhi koi named batches nahi hain. Upar custom batch add karein!</div>';
+                return;
+            }
+
+            container.innerHTML = batches.map(b => `
+                <div style="background: rgba(0,0,0,0.35); padding:10px; border-radius:8px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:800; font-size:0.75rem; color:#fff;">${b.batchName}</div>
+                        <div style="font-size:0.62rem; color:var(--accent-cyan); margin-top:2px;">${b.count.toLocaleString()} Methods</div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-sm exp" onclick="exportBatch('${b.batchId}', '${b.batchName}')">📄 EXPORT</button>
+                        <button class="btn-sm del" onclick="deleteBatch('${b.batchId}', '${b.batchName}')">🗑️ DELETE</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLabAndMinedSubGrids() {
+            const customMethods = methodConfigs.filter(c => c.origin !== 'AUTO_MINED');
+            const minedMethods = methodConfigs.filter(c => c.origin === 'AUTO_MINED');
+
+            const labGrid = document.getElementById('labSubMethodsGrid');
+            labGrid.innerHTML = customMethods.slice(0, 40).map(cfg => `
+                <div class="sub-card" style="opacity: ${cfg.active ? '1' : '0.55'};">
+                    <div class="sc-head">
+                        <span class="sc-title">${cfg.title}</span>
+                        <span style="font-size:0.55rem; color:var(--text-muted);">${cfg.flipDigits}</span>
+                    </div>
+                    ${cfg.batchName ? `<div style="font-size:0.58rem; color:var(--accent-purple);">📦 ${cfg.batchName}</div>` : ''}
+                    <div class="sc-actions">
+                        <button class="btn-sm ${cfg.active ? 'toggle-on' : 'toggle-off'}" onclick="toggleMethodActive('${cfg.id}')">
+                            ${cfg.active ? 'ACTIVE' : 'OFF'}
+                        </button>
+                        <button class="btn-sm exp" onclick="exportSingleMethod('${cfg.id}')">📄 EXPORT</button>
+                        <button class="btn-sm del" onclick="deleteMethod('${cfg.id}')">🗑️ DELETE</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const minedGrid = document.getElementById('minedSubMethodsGrid');
+            minedGrid.innerHTML = minedMethods.map(cfg => {
+                const st = methodsStats[cfg.id] || createTracker('');
+                return `
+                    <div class="sub-card" style="border-color:var(--accent-cyan); background:linear-gradient(180deg, rgba(6,182,212,0.08) 0%, var(--bg-card) 100%);">
+                        <div class="sc-head">
+                            <span class="sc-title">${cfg.title}</span>
+                            <span style="font-size:0.55rem; color:var(--accent-cyan); font-weight:800;">🧠 AI MINED</span>
+                        </div>
+                        <div style="font-size:0.62rem; color:var(--text-muted); display:flex; gap:6px;">
+                            <span>Max Loss: <b style="color:${st.maxLoss<=4?'#34d399':'#ef4444'}">${st.maxLoss}</b></span>
+                            <span>•</span>
+                            <span>Wins: <b style="color:#34d399">${st.wins}</b></span>
+                        </div>
+                        <div class="sc-actions">
+                            <button class="btn-sm ${cfg.active ? 'toggle-on' : 'toggle-off'}" onclick="toggleMethodActive('${cfg.id}')">
+                                ${cfg.active ? 'ACTIVE' : 'OFF'}
+                            </button>
+                            <button class="btn-sm exp" onclick="exportSingleMethod('${cfg.id}')">📄 EXPORT</button>
+                            <button class="btn-sm del" onclick="deleteMethod('${cfg.id}')">🗑️ DELETE</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAllStatsUI() {
+            const container = document.getElementById('statsContainer');
+            let filtered = methodConfigs;
+            if (currentFilterText) {
+                filtered = methodConfigs.filter(c => c.title.toLowerCase().includes(currentFilterText) || c.flipDigits.includes(currentFilterText));
+            }
+
+            const totalItems = filtered.length;
+            const pageSize = currentDisplayLimit > 0 ? currentDisplayLimit : (totalItems || 1);
+            const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+            currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+            const startIdx = (currentPage - 1) * pageSize;
+            const endIdx = startIdx + pageSize;
+            const visibleList = currentDisplayLimit > 0 ? filtered.slice(startIdx, endIdx) : filtered;
+
+            const paginationControls = document.getElementById('paginationControls');
+            const pageInfoDisplay = document.getElementById('pageInfoDisplay');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+
+            if (currentDisplayLimit === 0 || totalPages <= 1) {
+                paginationControls.style.display = 'none';
+            } else {
+                paginationControls.style.display = 'flex';
+                pageInfoDisplay.textContent = `${currentPage} / ${totalPages} (${totalItems} items)`;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+            }
+
+            const mainPredStr = String(apiProxyData.result).toUpperCase() === 'BIG' ? 'BIG' : 'SMALL';
+            const allConfigs = (currentPage === 1 ? [{ id: 'master', title: '🎯 MAIN ENGINE MASTER', isMaster: true }] : []).concat(visibleList);
+
+            container.innerHTML = allConfigs.map(cfg => {
+                const st = methodsStats[cfg.id] || createTracker(cfg.title);
+                const acc = st.total > 0 ? Math.round((st.wins / st.total) * 100) : 0;
+                const last5HTML = st.last5.map(res => `<span class="l5-pill ${res.toLowerCase()}">${res}</span>`).join('');
+                const curPredObj = cfg.isMaster ? { pred: mainPredStr, rawCalc: `Direct API Signal (${document.getElementById('currentPeriod').textContent})` } : computeCustomMethodPrediction(cfg, mainPredStr);
+
+                const actionBtns = !cfg.isMaster ? `
+                    <div style="display:flex; gap:4px; margin-left:8px; align-items:center;">
+                        <input type="checkbox" onchange="toggleSelect('${cfg.id}')" ${selectedMethods.has(cfg.id) ? 'checked' : ''}>
+                        <button class="btn-sm exp" onclick="exportSingleMethod('${cfg.id}')">📄 EXPORT</button>
+                        <button class="btn-sm del" onclick="deleteMethod('${cfg.id}')">🗑️ DEL</button>
+                    </div>
+                ` : '';
+
+                const formulaAndFlipInfo = !cfg.isMaster ? `
+                    FORMULA: ${curPredObj.formulaStr || cfg.title} | FLIP NUMS: [${cfg.flipDigits || '2,3,5,7'}] | CALC: ${curPredObj.rawCalc}
+                ` : `DIRECT PROXY SIGNAL (${document.getElementById('currentPeriod').textContent})`;
+
+                return `
+                    <div class="method-section" style="margin-top:10px;">
+                        <div class="method-head">
+                            <div style="display:flex; align-items:center;">
+                                <span>📊 ${st.title}</span>
+                                ${actionBtns}
+                            </div>
+                            <div class="meta-badges">
+                                ${cfg.origin === 'AUTO_MINED' ? '<span class="badge" style="background:rgba(6,182,212,0.2); color:var(--accent-cyan);">AI MINED</span>' : ''}
+                                ${cfg.lossFlip ? '<span class="badge orange">LOSS-FLIP ON</span>' : ''}
+                                ${cfg.singleDigit === 'YES' ? '<span class="badge blue">SINGLE DIGIT</span>' : ''}
+                                <span style="color:#60a5fa; margin-left:6px;">ACC: ${acc}%</span>
+                            </div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-box"><div class="lbl">TOTAL</div><div class="val">${st.total}</div></div>
+                            <div class="stat-box"><div class="lbl">WINS</div><div class="val green">${st.wins}</div></div>
+                            <div class="stat-box"><div class="lbl">LOSSES</div><div class="val red">${st.losses}</div></div>
+                            <div class="stat-box"><div class="lbl">STREAK</div><div class="val">${st.currentStreak > 0 ? '+' + st.currentStreak : st.currentStreak}</div></div>
+                            <div class="stat-box"><div class="lbl">5+ LOSS CNT</div><div class="val red">${st.fivePlusCount}</div></div>
+                        </div>
+                        <div class="stats-grid" style="margin-top: 6px;">
+                            <div class="stat-box"><div class="lbl">MAX WIN STRK</div><div class="val green">${st.maxWin}</div></div>
+                            <div class="stat-box"><div class="lbl">MAX LOSS STRK</div><div class="val red">${st.maxLoss}</div></div>
+                            <div class="stat-box"><div class="lbl">FLIP STATE</div><div class="val" style="font-size:0.62rem;">${st.inFlipMode ? 'FLIPPED' : 'NORMAL'}</div></div>
+                            <div class="stat-box" style="grid-column: span 2;"><div class="lbl">LAST 5 OUTCOMES</div><div class="last5-bar">${last5HTML || '-'}</div></div>
+                        </div>
+                        <div style="margin-top:8px; font-family:var(--font-mono); font-size:0.62rem; color:var(--accent-cyan); background:var(--bg-main); padding:6px; border-radius:6px; text-align:center;">
+                            ${formulaAndFlipInfo} | <b>NEXT PRED:</b> <span style="color:${curPredObj.pred==='BIG'?'#fbbf24':'#38bdf8'}; font-weight:800;">${curPredObj.pred}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLogsTable() {
+            const headerRow = document.getElementById('logsTableHeader');
+            let cols = logViewMode === 'selected' ? methodConfigs.filter(c => selectedMethods.has(c.id)) : methodConfigs.slice(0, 5);
+
+            let headerHTML = `<th>Round</th><th>Period</th><th>Result</th><th>Main Engine</th>`;
+            cols.forEach(cfg => {
+                headerHTML += `<th>${cfg.title}</th>`;
+            });
+            headerRow.innerHTML = headerHTML;
+
+            const body = document.getElementById('logsTableBody');
+            const visibleLogs = roundHistory.slice(0, 50);
+
+            body.innerHTML = visibleLogs.map((r, idx) => {
+                const roundNo = roundHistory.length - idx;
+                const mRes = r.results['master'];
+                const mClass = mRes?.win ? 'badge-win' : 'badge-loss';
+
+                let rowHTML = `
+                    <tr>
+                        <td>#${roundNo}</td>
+                        <td style="font-family:var(--font-mono);">${r.period}</td>
+                        <td style="font-weight:800;">${r.actualNum} (${r.actualSize})</td>
+                        <td class="${mClass}">${mRes?.pred || '-'}</td>
+                `;
+
+                cols.forEach(cfg => {
+                    const res = r.results[cfg.id];
+                    if (!res) {
+                        rowHTML += `<td>-</td>`;
+                    } else {
+                        const resClass = res.win ? 'badge-win' : 'badge-loss';
+                        rowHTML += `<td class="${resClass}">${res.pred}</td>`;
+                    }
+                });
+
+                rowHTML += `</tr>`;
+                return rowHTML;
+            }).join('');
+        }
+
+        async function init() {
+            await loadFromStorage();
+            updateCountersUI();
+            renderAllStatsUI();
+            renderLogsTable();
+            fetchData();
+        }
+        init();
+
+        function updateTimer() {
+            const nowSeconds = new Date().getSeconds();
+            const sec = 30 - (nowSeconds % 30);
+            document.getElementById('timerDisplay').textContent = `00:${String(sec).padStart(2, '0')}`;
+            if (sec === 29 || sec === 1 || sec % 5 === 0) fetchData();
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
+</body>
+</html>
