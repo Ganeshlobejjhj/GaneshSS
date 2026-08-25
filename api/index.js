@@ -1,9 +1,8 @@
 // api/index.js
 export default async function handler(req, res) {
-  // Sabhi external sites ke liye Open CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Universal Open CORS for all external sites
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
 
   if (req.method === 'OPTIONS') {
@@ -12,117 +11,108 @@ export default async function handler(req, res) {
 
   const { game = 'K3_1M', ts = Date.now() } = req.query;
 
-  // Real-time deterministic fallback generator (agar origin 403 block kare)
-  function getSynchronizedK3Data(gameType = 'K3_1M', count = 30) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    
-    const intervalMap = { 'K3_1M': 1, 'K3_3M': 3, 'K3_5M': 5, 'K3_10M': 10 };
-    const intervalMin = intervalMap[gameType] || 1;
-    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-    const currentPeriodNum = Math.floor(currentTotalMinutes / intervalMin);
-
-    const list = [];
-    for (let i = 0; i < count; i++) {
-      const periodIndex = Math.max(1, currentPeriodNum - i);
-      const periodStr = `${year}${month}${day}1010${String(periodIndex).padStart(4, '0')}`;
-
-      const seed = Number(periodIndex) * 9301 + 49297;
-      const n1 = ((seed % 6) + 1);
-      const n2 = (((seed * 7 + 3) % 6) + 1);
-      const n3 = (((seed * 13 + 5) % 6) + 1);
-      const sum = n1 + n2 + n3;
-
-      list.push({
-        issue: periodStr,
-        dice: [n1, n2, n3],
-        sum: sum,
-        size: sum >= 11 ? 'Big' : 'Small',
-        parity: sum % 2 === 0 ? 'Even' : 'Odd',
-        openTime: new Date(now.getTime() - i * intervalMin * 60 * 1000).toISOString()
-      });
-    }
-    return list;
-  }
-
-  // Exact Headers to bypass Cloudflare 403
+  // Exact Endpoint used by 19yaarwin.com
   const targetUrl = `https://draw.ar-lottery01.com/K3/${game}/GetHistoryIssuePage.json?ts=${ts}`;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Origin': 'https://19yaarwin.com',
-        'Referer': 'https://19yaarwin.com/',
-        'Sec-Ch-Ua': '"Chromium";v="137", "Not/A)Brand";v="24"',
-        'Sec-Ch-Ua-Mobile': '?1',
-        'Sec-Ch-Ua-Platform': '"Android"',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'cross-site',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    if (response.ok) {
-      const rawData = await response.json();
-      let rawList = [];
-      if (Array.isArray(rawData)) rawList = rawData;
-      else if (rawData?.data?.list) rawList = rawData.data.list;
-      else if (rawData?.list) rawList = rawData.list;
-      else if (rawData?.data) rawList = Array.isArray(rawData.data) ? rawData.data : [];
-
-      if (rawList.length > 0) {
-        const formattedList = rawList.map((item) => {
-          const issue = String(item.issueNumber || item.issueName || item.period || item.issue || '');
-          let dice = [];
-          if (Array.isArray(item.numbers)) dice = item.numbers.map(Number);
-          else if (typeof item.openNum === 'string') dice = item.openNum.split(/[,|\s]+/).map(Number);
-          else if (typeof item.result === 'string') dice = item.result.split(/[,|\s]+/).map(Number);
-
-          const sum = dice.length > 0 ? dice.reduce((a, b) => a + b, 0) : (Number(item.sum) || 0);
-          return {
-            issue: issue,
-            dice: dice,
-            sum: sum,
-            size: sum >= 11 ? 'Big' : 'Small',
-            parity: sum % 2 === 0 ? 'Even' : 'Odd',
-            openTime: item.openTime || item.createTime || new Date().toISOString()
-          };
-        });
-
-        return res.status(200).json({
-          status: 'success',
-          source: 'remote_live',
-          game: game,
-          timestamp: Date.now(),
-          total: formattedList.length,
-          latestIssue: formattedList[0]?.issue || null,
-          data: formattedList
-        });
+        'authority': 'draw.ar-lottery01.com',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7',
+        'origin': 'https://19yaarwin.com',
+        'referer': 'https://19yaarwin.com/',
+        'sec-ch-ua': '"Chromium";v="137", "Not/A)Brand";v="24"',
+        'sec-ch-ua-mobile': '?1',
+        'sec-ch-ua-platform': '"Android"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'cross-site',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
       }
+    });
+
+    const rawJson = await response.json();
+
+    // 19yaarwin data structures: rawJson.data.list OR rawJson.data.rows OR rawJson.list
+    let rawList = [];
+    if (Array.isArray(rawJson)) {
+      rawList = rawJson;
+    } else if (rawJson?.data?.list && Array.isArray(rawJson.data.list)) {
+      rawList = rawJson.data.list;
+    } else if (rawJson?.data?.rows && Array.isArray(rawJson.data.rows)) {
+      rawList = rawJson.data.rows;
+    } else if (rawJson?.list && Array.isArray(rawJson.list)) {
+      rawList = rawJson.list;
+    } else if (rawJson?.data && Array.isArray(rawJson.data)) {
+      rawList = rawJson.data;
     }
-    throw new Error(`Origin status: ${response.status}`);
-  } catch (err) {
-    // Agar Cloudflare block kare, toh fallback sync data smoothly provide karega (Kabhi 403 error nahi dikhayega)
-    const syncData = getSynchronizedK3Data(game, 30);
+
+    // Exact field extraction matching screenshot & official K3 rules
+    const formattedList = rawList.map((item) => {
+      // 1. Exact Period ID (e.g., 2026082510100412)
+      const period = String(
+        item.issueName ||
+        item.issueNumber ||
+        item.issue_number ||
+        item.period ||
+        item.issue ||
+        item.id ||
+        ''
+      );
+
+      // 2. Exact 3 Dice Numbers extraction
+      let dice = [];
+      if (typeof item.openNum === 'string') {
+        dice = item.openNum.split(/[,|\s|]+/).map((n) => parseInt(n.trim(), 10)).filter((n) => !isNaN(n));
+      } else if (Array.isArray(item.numbers)) {
+        dice = item.numbers.map((n) => parseInt(n, 10)).filter((n) => !isNaN(n));
+      } else if (typeof item.result === 'string') {
+        dice = item.result.split(/[,|\s|]+/).map((n) => parseInt(n.trim(), 10)).filter((n) => !isNaN(n));
+      } else if (typeof item.number === 'string') {
+        dice = item.number.split(/[,|\s|]+/).map((n) => parseInt(n.trim(), 10)).filter((n) => !isNaN(n));
+      }
+
+      // 3. Exact Sum Calculation
+      const sum = (item.sum !== undefined && item.sum !== null && !isNaN(Number(item.sum)))
+        ? Number(item.sum)
+        : (dice.length > 0 ? dice.reduce((a, b) => a + b, 0) : 0);
+
+      // 4. Exact Big / Small (K3 Standard: 3-10 Small, 11-18 Big)
+      const size = item.bigSmall || (sum >= 11 ? 'Big' : 'Small');
+
+      // 5. Exact Odd / Even (Sum Parity)
+      const parity = item.oddEven || (sum % 2 === 0 ? 'Even' : 'Odd');
+
+      // 6. Draw Open Time
+      const openTime = item.openTime || item.createTime || item.create_time || item.time || '';
+
+      return {
+        period: period,
+        sum: sum,
+        size: size,           // "Small" ya "Big"
+        parity: parity,       // "Odd" ya "Even"
+        dice: dice,           // [1, 2, 4]
+        openTime: openTime,
+        raw: item             // Original raw item from server for 100% precision
+      };
+    });
+
     return res.status(200).json({
-      status: 'success',
-      source: 'live_sync',
+      success: true,
       game: game,
       timestamp: Date.now(),
-      total: syncData.length,
-      latestIssue: syncData[0]?.issue || null,
-      data: syncData
+      totalRecords: formattedList.length,
+      latest: formattedList[0] || null,
+      data: formattedList
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      game: game,
+      error: error.message || 'Failed to fetch original K3 data'
     });
   }
-        }
+                                      }
